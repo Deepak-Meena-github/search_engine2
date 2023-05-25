@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:async';
-import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 void main() {
   runApp(const MaterialApp(
@@ -35,6 +33,11 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Image Gallery'),
+        centerTitle: true,
+        backgroundColor: Colors.blue,
+      ),
       body: Stack(
         children: [
           GridView.builder(
@@ -52,16 +55,22 @@ class _SearchPageState extends State<SearchPage> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => FullScreenImage(
-                        imageUrl: map!["hits"][index]["largeImageURL"],
+                        imageUrls: List<String>.from(
+                          map!["hits"].map((hit) => hit["largeImageURL"]).toList(),
+                        ),
+                        initialIndex: index,
                       ),
                     ),
                   );
                 },
                 child: Hero(
                   tag: map!["hits"][index]["largeImageURL"],
-                  child: Image.network(
-                    map!["hits"][index]["webformatURL"],
-                    fit: BoxFit.cover,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8.0),
+                    child: Image.network(
+                      map!["hits"][index]["webformatURL"],
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               );
@@ -69,13 +78,30 @@ class _SearchPageState extends State<SearchPage> {
           ),
           Positioned(
             top: 30,
+            left: 16,
+            right: 16,
             child: Container(
-              color: Colors.white,
-              width: MediaQuery.of(context).size.width,
-              height: 70,
-              padding: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.3),
+                    spreadRadius: 2,
+                    blurRadius: 5,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
               child: TextFormField(
-                decoration: InputDecoration(border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  hintText: 'Search for images...',
+                  contentPadding: const EdgeInsets.all(16.0),
+                  suffixIcon: Icon(Icons.search),
+                ),
                 onChanged: (value) async {
                   await GetPics(value);
                   setState(() {});
@@ -89,31 +115,78 @@ class _SearchPageState extends State<SearchPage> {
   }
 }
 
-class FullScreenImage extends StatelessWidget {
-  final String imageUrl;
+class FullScreenImage extends StatefulWidget {
+  final List<String> imageUrls;
+  final int initialIndex;
 
-  const FullScreenImage({required this.imageUrl});
+  const FullScreenImage({
+    required this.imageUrls,
+    required this.initialIndex,
+  });
+
+  @override
+  _FullScreenImageState createState() => _FullScreenImageState();
+}
+
+class _FullScreenImageState extends State<FullScreenImage> {
+  late PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: _currentIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _navigateToPage(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       body: GestureDetector(
         onTap: () {
           Navigator.pop(context);
         },
-        child: Container(
-          color: Colors.black,
-          child: Center(
-            child: Hero(
-              tag: imageUrl,
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.contain,
-                height: MediaQuery.of(context).size.height,
+        child: PageView.builder(
+          controller: _pageController,
+          itemCount: widget.imageUrls.length,
+          onPageChanged: _navigateToPage,
+          itemBuilder: (context, index) {
+            return Center(
+              child: Hero(
+                tag: widget.imageUrls[index],
+                child: Image.network(
+                  widget.imageUrls[index],
+                  fit: BoxFit.contain,
+                  height: MediaQuery.of(context).size.height,
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          if (_currentIndex < widget.imageUrls.length - 1) {
+            _pageController.nextPage(
+              duration: Duration(milliseconds: 500),
+              curve: Curves.easeInOut,
+            );
+          }
+        },
+        child: Icon(Icons.arrow_forward),
       ),
     );
   }
