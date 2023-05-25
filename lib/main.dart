@@ -1,7 +1,4 @@
-// ignore_for_file: non_constant_identifier_names, unused_label
-
 import 'package:flutter/material.dart';
-//import 'scr.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -14,110 +11,9 @@ void main() {
   ));
 }
 
-// class firrstpage extends StatelessWidget {
-//   firrstpage({super.key});
-//   final _categoryNameController = TextEditingController();
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: Material(
-//         color: Colors.white,
-//         child: Center(
-//             child: ListView(
-//           children: <Widget>[
-//             const Padding(padding: EdgeInsets.all(30.0)),
-//             // new Image.asset('images/photohobay.png',
-//             // width: 200.0,
-//             // height: 200.0
-//             // ,)
-//             ListTile(
-//               title: TextFormField(
-//                 controller: _categoryNameController,
-//                 decoration: InputDecoration(
-//                     labelText: "enter a categary",
-//                     hintText: 'eg, dogs, cats...',
-//                     border: OutlineInputBorder(
-//                         borderRadius: BorderRadius.circular(25.0)),
-//                     contentPadding:
-//                         const EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0)),
-//               ),
-//             ),
-//             const Padding(
-//               padding: EdgeInsets.all(4.0),
-//             ),
-//             ListTile(
-//               title: Material(
-//                   color: Colors.blue,
-//                   elevation: 5.0,
-//                   borderRadius: BorderRadius.circular(25.0),
-//                   child: MaterialButton(
-//                     height: 10,
-//                     onPressed: () {},
-//                     child: const Text('search',
-//                         style: TextStyle(
-//                             fontSize: 22.0,
-//                             fontWeight: FontWeight.bold,
-//                             color: Colors.white)),
-//                   )),
-//             )
-//           ],
-//         )),
-//       ),
-//     );
-//   }
-// }
-
-// class SecondPage extends StatefulWidget {
-//   const SecondPage({super.key});
-
-//   @override
-//   State<SecondPage> createState() => _SecondPageState();
-// }
-
-// class _SecondPageState extends State<SecondPage> {
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//         appBar: AppBar(
-//           backgroundColor: Colors.blue,
-//           title: const Text(
-//             'search',
-//             style: TextStyle(color: Colors.white),
-//           ),
-//           centerTitle: true,
-//         ),
-//         body: FutureBuilder(
-//             future: GetPics(),
-//             builder: (context, snapshot) {
-//               Map? data = snapshot.data;
-//               if (snapshot.hasError) {
-//                 print(snapshot.error);
-//                 return const Text('faild to get response form the server');
-//               } else if (snapshot.hasData) {
-//                 return Center(
-//                   child: ListView.builder(
-//                     itemCount: data!.length,
-//                     itemBuilder: (context, index) {
-//                       childern:
-//                       <Widget>[
-//                         const Padding(padding: EdgeInsets.all(5.0)),
-//                         InkWell(
-//                           onTap: () {},
-//                           child: Image.network(
-//                               '${data['hits'][index]['largeImageUrl']}'),
-//                         )
-//                       ];
-//                     },
-//                   ),
-//                 );
-//               }
-//               return const Center(child: CircularProgressIndicator());
-//             }));
-//   }
-// }
 Map<String, dynamic>? map;
-Future<Map> GetPics(value) async {
+
+Future<Map> GetPics(String value) async {
   const apiKey = '36684516-4d8c0a326c01fc11ecba49112';
   String url =
       'https://pixabay.com/api/?key=$apiKey&q=$value&image_type=photo&pretty=true';
@@ -129,7 +25,7 @@ Future<Map> GetPics(value) async {
 }
 
 class SearchPage extends StatefulWidget {
-  const SearchPage({super.key});
+  const SearchPage({Key? key});
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -141,41 +37,83 @@ class _SearchPageState extends State<SearchPage> {
     return Scaffold(
       body: Stack(
         children: [
-          ListView.builder(
-              padding: EdgeInsets.only(top: 100),
-              itemCount: map?["hits"]?.length ?? 0,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ListTile(
-                    leading: Image.network(
-                      map!["hits"][index]["userImageURL"],
-                      errorBuilder: (context, error, stackTrace) {
-                        return const CircleAvatar(
-                          child: Icon(Icons.not_accessible),
-                        );
-                      },
+          GridView.builder(
+            padding: EdgeInsets.only(top: 100),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 8.0,
+              mainAxisSpacing: 8.0,
+            ),
+            itemCount: map?["hits"]?.length ?? 0,
+            itemBuilder: (context, index) {
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FullScreenImage(
+                        imageUrl: map!["hits"][index]["largeImageURL"],
+                      ),
                     ),
-                    title: Text(map!["hits"][index]["user"]),
+                  );
+                },
+                child: Hero(
+                  tag: map!["hits"][index]["largeImageURL"],
+                  child: Image.network(
+                    map!["hits"][index]["webformatURL"],
+                    fit: BoxFit.cover,
                   ),
-                );
-              }),
-          Positioned(
-              top: 30,
-              child: Container(
-                color: Colors.white,
-                width: MediaQuery.of(context).size.width,
-                height: 70,
-                padding: const EdgeInsets.all(8.0),
-                child: TextFormField(
-                  decoration: InputDecoration(border: OutlineInputBorder()),
-                  onChanged: (value) async {
-                    await GetPics(value);
-                    setState(() {});
-                  },
                 ),
-              ))
+              );
+            },
+          ),
+          Positioned(
+            top: 30,
+            child: Container(
+              color: Colors.white,
+              width: MediaQuery.of(context).size.width,
+              height: 70,
+              padding: const EdgeInsets.all(8.0),
+              child: TextFormField(
+                decoration: InputDecoration(border: OutlineInputBorder()),
+                onChanged: (value) async {
+                  await GetPics(value);
+                  setState(() {});
+                },
+              ),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class FullScreenImage extends StatelessWidget {
+  final String imageUrl;
+
+  const FullScreenImage({required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: GestureDetector(
+        onTap: () {
+          Navigator.pop(context);
+        },
+        child: Container(
+          color: Colors.black,
+          child: Center(
+            child: Hero(
+              tag: imageUrl,
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+                height: MediaQuery.of(context).size.height,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
